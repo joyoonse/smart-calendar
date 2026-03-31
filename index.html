@@ -146,7 +146,7 @@
             '5-1': '근로자의 날', '5-5': '어린이날', '5-8': '어버이날', '5-15': '스승의 날', '5-18': '5.18 민주화운동',
             '6-6': '현충일', '6-25': '6.25 전쟁', '7-17': '제헌절', '8-15': '광복절',
             '10-1': '국군의 날', '10-3': '개천절', '10-9': '한글날', '10-31': '할로윈',
-            '11-11': '빼빼로데이', '12-24' : '크리스마스 이브','12-25': '성탄절'
+            '11-11': '빼빼로데이', '12-24' : '크리스마스 이브','12-25': '성탄절' 
         };
 
         let currYear = new Date().getFullYear();
@@ -222,42 +222,44 @@
             }
 
             for (let i = 1; i <= TLDate; i++) {
-                const dateKey = `${currYear}-${currMonth + 1}-${i}`;
-                const specialKey = `${currMonth + 1}-${i}`;
-                const isToday = (currYear === today.getFullYear() && currMonth === today.getMonth() && i === today.getDate()) ? 'today' : '';
-                
-                const holidayName = currentHolidays[dateKey];
-                let specialName = specialDays[specialKey];
+    const dateKey = `${currYear}-${currMonth + 1}-${i}`;
+    const specialKey = `${currMonth + 1}-${i}`;
+    
+    // 이스터 에그 체크: 2011년 12월 17일인지 확인
+    const isBirthday = (currYear === 2011 && currMonth === 11 && i === 17);
+    
+    const isToday = (currYear === today.getFullYear() && currMonth === today.getMonth() && i === today.getDate()) ? 'today' : '';
+    
+    const holidayName = currentHolidays[dateKey];
+    let specialName = specialDays[specialKey];
 
-                // 💡 핵심 로직: 겹치는 날 처리
-                // 1. 공휴일(holidayName)이 존재한다면, specialName은 무조건 null로 만들어 표시하지 않음
-                // 2. 단, 공휴일이 없는 날에만 specialDays 목록을 보여줌
-                if (holidayName) {
-                    specialName = null; 
-                }
-                
-                const dayOfWeek = new Date(currYear, currMonth, i).getDay();
-                let numClass = "font-bold text-xl leading-none transition-colors";
-                if (holidayName || dayOfWeek === 0) numClass += " num-red";
-                else if (dayOfWeek === 6) numClass += " num-blue";
+    if (holidayName) {
+        specialName = null; 
+    }
+    
+    const dayOfWeek = new Date(currYear, currMonth, i).getDay();
+    let numClass = "font-bold text-xl leading-none transition-colors";
+    if (holidayName || dayOfWeek === 0) numClass += " num-red";
+    else if (dayOfWeek === 6) numClass += " num-blue";
 
-                const schedule = localStorage.getItem(`sched-${dateKey}`) || "";
+    const schedule = localStorage.getItem(`sched-${dateKey}`) || "";
 
-                html.push(`
-                    <div onclick="addSchedule('${dateKey}')" class="day-cell ${isToday}">
-                        <div class="flex justify-between items-start mb-1">
-                            <span class="${numClass}">${i}</span>
-                            <div class="label-group">
-                                ${holidayName ? `<span class="label-base holiday-label">${holidayName}</span>` : ''}
-                                ${specialName ? `<span class="label-base special-label">${specialName}</span>` : ''}
-                            </div>
-                        </div>
-                        <div class="schedule-container">
-                            ${schedule ? `<div class="schedule-item">${schedule}</div>` : ''}
-                        </div>
-                    </div>
-                `);
-            }
+    html.push(`
+        <div onclick="addSchedule('${dateKey}')" class="day-cell ${isToday}">
+            <div class="flex justify-between items-start mb-1">
+                <span class="${numClass}">${i}</span>
+                <div class="label-group">
+                    ${holidayName ? `<span class="label-base holiday-label">${holidayName}</span>` : ''}
+                    ${specialName ? `<span class="label-base special-label">${specialName}</span>` : ''}
+                    ${isBirthday ? `<span class="label-base bg-pink-500 text-white shadow-sm animate-bounce">🎂 조윤세 생일</span>` : ''}
+                </div>
+            </div>
+            <div class="schedule-container">
+                ${schedule ? `<div class="schedule-item">${schedule}</div>` : ''}
+            </div>
+        </div>
+    `);
+}
 
             for (let i = 1; i < 7 - TLDay; i++) {
                 html.push(`<div class="day-cell other-month"><span class="text-xs font-semibold">${i}</span></div>`);
