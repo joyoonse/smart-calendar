@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Grid Calendar - Final Optimized</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+        
+        :root {
+            --bg-color: #f8fafc;
+            --container-bg: rgba(255, 255, 255, 0.95);
+            --text-main: #1f2937;
+            --border-color: #e5e7eb;
+            --header-bg: #ffffff;
+            --weekday-bg: #f9fafb;
+        }
+
+        .dark-mode {
+            --bg-color: #1a1a1a;
+            --container-bg: rgba(38, 38, 38, 0.9);
+            --text-main: #f3f4f6;
+            --border-color: #404040;
+            --header-bg: #262626;
+            --weekday-bg: #2d2d2d;
+        }
+
+        body { 
+            transition: all 0.3s ease; 
+            background-size: cover; background-position: center;
+            font-family: 'Pretendard', sans-serif;
+            margin: 0; padding: 0; background-attachment: fixed;
+            background-color: var(--bg-color); color: var(--text-main);
+        }
+
+        .calendar-wrapper {
+            backdrop-filter: blur(20px);
+            background-color: var(--container-bg);
+            border: 1px solid var(--border-color);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+
+        .grid-container { display: grid; grid-template-columns: repeat(7, 1fr); width: 100%; }
+
+        .weekday-cell {
+            padding: 18px 0; text-align: center; font-weight: 800; font-size: 0.8rem;
+            color: var(--text-main); border-bottom: 2px solid var(--text-main);
+            background-color: var(--weekday-bg); letter-spacing: 0.1em;
+        }
+
+        .day-cell {
+            min-height: 130px; height: 16vh;
+            border-right: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border-color);
+            padding: 12px; display: flex; flex-direction: column;
+            overflow: hidden; cursor: pointer; transition: background 0.2s;
+        }
+
+        .day-cell:nth-child(7n) { border-right: none; }
+        .day-cell:hover:not(.other-month) { background-color: rgba(59, 130, 246, 0.08); }
+        
+        .today { 
+            background-color: rgba(59, 130, 246, 0.12) !important; 
+            box-shadow: inset 0 0 0 2px #3b82f6; z-index: 5;
+        }
+
+        .num-red { color: #f87171; }
+        .num-blue { color: #60a5fa; }
+        .other-month { color: #9ca3af; opacity: 0.2; pointer-events: none; }
+
+        .schedule-container {
+            flex-grow: 1; overflow-y: auto; margin-top: 8px;
+            display: flex; flex-direction: column; gap: 4px;
+        }
+
+        .schedule-item {
+            font-size: 11px; background-color: #3b82f6; color: white;
+            padding: 4px 8px; border-radius: 6px; line-height: 1.4;
+            word-break: break-all; white-space: normal;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .label-group { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
+        .label-base { font-size: 10px; font-weight: 700; padding: 2px 5px; border-radius: 4px; white-space: nowrap; }
+        .holiday-label { color: #ef4444; background-color: rgba(239, 68, 68, 0.15); }
+        .special-label { color: #8b5cf6; background-color: rgba(139, 92, 246, 0.15); }
+
+        .schedule-container::-webkit-scrollbar { width: 0px; }
+
+        .ctrl-btn {
+            padding: 10px 18px; border-radius: 12px; font-weight: 700; font-size: 0.85rem;
+            border: 1px solid var(--border-color); background-color: var(--header-bg); color: var(--text-main);
+            transition: all 0.2s;
+        }
+        .ctrl-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+
+        .nav-btn {
+            width: 44px; height: 44px; display: flex; align-items: center; justify-content: center;
+            border-radius: 12px; background: var(--header-bg); border: 1px solid var(--border-color); color: var(--text-main);
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-6">
+
+    <div id="mainWrapper" class="calendar-wrapper max-w-7xl w-full rounded-[2rem] overflow-hidden">
+        <div class="p-8 flex flex-col lg:flex-row justify-between items-center gap-6 border-b" style="background-color: var(--header-bg);">
+            <div class="flex items-center gap-10">
+                <button onclick="changeMonth(-1)" class="nav-btn transition hover:bg-blue-500 hover:text-white">◀</button>
+                <h2 id="monthDisplay" class="text-4xl font-black min-w-[240px] text-center tracking-tight"></h2>
+                <button onclick="changeMonth(1)" class="nav-btn transition hover:bg-blue-500 hover:text-white">▶</button>
+            </div>
+
+            <div class="flex flex-wrap items-center justify-center gap-4">
+                <button onclick="toggleDarkMode()" class="ctrl-btn flex items-center gap-2">
+                    <span id="darkIcon">🌙</span> <span id="darkText">다크모드 ON</span>
+                </button>
+                <div class="flex items-center gap-3 bg-black/5 dark:bg-white/5 p-2 px-4 rounded-2xl border border-dashed border-gray-400">
+                    <span class="text-xs font-bold opacity-80 uppercase tracking-widest">Theme</span>
+                    <input type="file" id="themeUpload" accept="image/*" class="hidden">
+                    <button onclick="document.getElementById('themeUpload').click()" class="text-xs font-black hover:text-blue-500 transition">UPLOAD</button>
+                    <button onclick="resetTheme()" class="text-xs text-red-500 font-black ml-2 transition">RESET</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid-container">
+            <div class="weekday-cell num-red">SUN</div>
+            <div class="weekday-cell">MON</div>
+            <div class="weekday-cell">TUE</div>
+            <div class="weekday-cell">WED</div>
+            <div class="weekday-cell">THU</div>
+            <div class="weekday-cell">FRI</div>
+            <div class="weekday-cell num-blue">SAT</div>
+        </div>
+
+        <div id="calendarGrid" class="grid-container" style="background-color: transparent;"></div>
+    </div>
+
+    <script>
+        const HOLIDAY_API_KEY = '61f7d829f860ed4f53b7f27f6c1d929973fc1c700ad9e6bdd7b64875c8cae82b'; 
+
+        // 💡 직접 관리하는 기념일 목록 (공휴일과 겹치면 자동으로 숨겨짐)
+        const specialDays = {
+            '3-1': '삼일절', '4-3': '제주 4.3 사건', '4-19': '4.19 혁명',
+            '5-1': '근로자의 날', '5-5': '어린이날', '5-8': '어버이날', '5-15': '스승의 날', '5-18': '5.18 민주화운동',
+            '6-6': '현충일', '6-25': '6.25 전쟁', '7-17': '제헌절', '8-15': '광복절',
+            '10-1': '국군의 날', '10-3': '개천절', '10-9': '한글날', '10-31': '할로윈',
+            '11-11': '빼빼로데이', '12-24' : '크리스마스 이브','12-25': '성탄절'
+        };
+
+        let currYear = new Date().getFullYear();
+        let currMonth = new Date().getMonth();
+        const holidayCache = {};
+
+        async function init() {
+            if (localStorage.getItem('dark-mode') === 'enabled') {
+                document.body.classList.add('dark-mode');
+                updateDarkUI(true);
+            }
+            loadTheme();
+            renderCalendar(); 
+            await updateHolidays(); 
+        }
+
+        function toggleDarkMode() {
+            const isDark = document.body.classList.toggle('dark-mode');
+            localStorage.setItem('dark-mode', isDark ? 'enabled' : 'disabled');
+            updateDarkUI(isDark);
+        }
+
+        function updateDarkUI(isDark) {
+            document.getElementById('darkIcon').innerText = isDark ? '☀️' : '🌙';
+            document.getElementById('darkText').innerText = isDark ? '라이트모드 ON' : '다크모드 ON';
+        }
+
+        async function updateHolidays() {
+            const cacheKey = `${currYear}-${currMonth}`;
+            if (holidayCache[cacheKey]) { renderCalendar(); return; }
+            const year = currYear;
+            const month = String(currMonth + 1).padStart(2, '0');
+            const url = `https://apis.data.go.kr/B090041/openapi/service/SpcdeInfoService/getHoliDeInfo?solYear=${year}&solMonth=${month}&ServiceKey=${HOLIDAY_API_KEY}&_type=json`;
+
+            try {
+                const res = await fetch(url);
+                const data = await res.json();
+                const currentMonthHolidays = {};
+                if (data.response?.body?.items?.item) {
+                    const items = data.response.body.items.item;
+                    const list = Array.isArray(items) ? items : [items];
+                    list.forEach(i => {
+                        const d = String(i.locdate);
+                        const key = `${d.substring(0,4)}-${Number(d.substring(4,6))}-${Number(d.substring(6,8))}`;
+                        currentMonthHolidays[key] = i.dateName;
+                    });
+                }
+                holidayCache[cacheKey] = currentMonthHolidays;
+                renderCalendar(); 
+            } catch (e) { console.warn("공휴일 로드 실패", e); }
+        }
+
+        function renderCalendar() {
+            document.getElementById('monthDisplay').innerText = `${currYear}년 ${currMonth + 1}월`;
+            const cacheKey = `${currYear}-${currMonth}`;
+            const currentHolidays = holidayCache[cacheKey] || {};
+
+            const prevLast = new Date(currYear, currMonth, 0);
+            const thisLast = new Date(currYear, currMonth + 1, 0);
+            const PLDate = prevLast.getDate();
+            const PLDay = prevLast.getDay();
+            const TLDate = thisLast.getDate();
+            const TLDay = thisLast.getDay();
+
+            const html = [];
+            const today = new Date();
+
+            if (PLDay !== 6) {
+                for (let i = 0; i <= PLDay; i++) {
+                    const d = PLDate - (PLDay - i);
+                    html.push(`<div class="day-cell other-month"><span class="text-xs font-semibold">${d}</span></div>`);
+                }
+            }
+
+            for (let i = 1; i <= TLDate; i++) {
+                const dateKey = `${currYear}-${currMonth + 1}-${i}`;
+                const specialKey = `${currMonth + 1}-${i}`;
+                const isToday = (currYear === today.getFullYear() && currMonth === today.getMonth() && i === today.getDate()) ? 'today' : '';
+                
+                const holidayName = currentHolidays[dateKey];
+                let specialName = specialDays[specialKey];
+
+                // 💡 핵심 로직: 겹치는 날 처리
+                // 1. 공휴일(holidayName)이 존재한다면, specialName은 무조건 null로 만들어 표시하지 않음
+                // 2. 단, 공휴일이 없는 날에만 specialDays 목록을 보여줌
+                if (holidayName) {
+                    specialName = null; 
+                }
+                
+                const dayOfWeek = new Date(currYear, currMonth, i).getDay();
+                let numClass = "font-bold text-xl leading-none transition-colors";
+                if (holidayName || dayOfWeek === 0) numClass += " num-red";
+                else if (dayOfWeek === 6) numClass += " num-blue";
+
+                const schedule = localStorage.getItem(`sched-${dateKey}`) || "";
+
+                html.push(`
+                    <div onclick="addSchedule('${dateKey}')" class="day-cell ${isToday}">
+                        <div class="flex justify-between items-start mb-1">
+                            <span class="${numClass}">${i}</span>
+                            <div class="label-group">
+                                ${holidayName ? `<span class="label-base holiday-label">${holidayName}</span>` : ''}
+                                ${specialName ? `<span class="label-base special-label">${specialName}</span>` : ''}
+                            </div>
+                        </div>
+                        <div class="schedule-container">
+                            ${schedule ? `<div class="schedule-item">${schedule}</div>` : ''}
+                        </div>
+                    </div>
+                `);
+            }
+
+            for (let i = 1; i < 7 - TLDay; i++) {
+                html.push(`<div class="day-cell other-month"><span class="text-xs font-semibold">${i}</span></div>`);
+            }
+
+            document.getElementById('calendarGrid').innerHTML = html.join('');
+        }
+
+        function changeMonth(diff) {
+            currMonth += diff;
+            if (currMonth < 0) { currYear--; currMonth = 11; }
+            else if (currMonth > 11) { currYear++; currMonth = 0; }
+            renderCalendar(); updateHolidays();
+        }
+
+        function addSchedule(key) {
+            const val = prompt(`${key} 일정 입력:`, localStorage.getItem(`sched-${key}`) || "");
+            if (val !== null) {
+                if (val === "") localStorage.removeItem(`sched-${key}`);
+                else localStorage.setItem(`sched-${key}`, val);
+                renderCalendar();
+            }
+        }
+
+        const themeInput = document.getElementById('themeUpload');
+        themeInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    localStorage.setItem('cal-bg', ev.target.result);
+                    applyTheme(ev.target.result);
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+        function applyTheme(img) { document.body.style.backgroundImage = `url(${img})`; }
+        function loadTheme() { if (localStorage.getItem('cal-bg')) applyTheme(localStorage.getItem('cal-bg')); }
+        function resetTheme() { localStorage.removeItem('cal-bg'); document.body.style.backgroundImage = 'none'; }
+
+        init();
+    </script>
+</body>
+</html>
