@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Glass Calendar - Perfect Version</title>
+    <title>Smart Glass Dashboard - Mobile Optimized</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
@@ -26,11 +26,7 @@
             --weekday-bg: rgba(30, 41, 59, 0.2);
         }
 
-        * { 
-            box-sizing: border-box; 
-            margin: 0; 
-            padding: 0; 
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
 
         body { 
             transition: background-color 0.4s ease;
@@ -41,7 +37,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 24px;
+            padding: 12px; /* 모바일 대응 패딩 축소 */
             background-size: cover;
             background-position: center;
             background-attachment: fixed;
@@ -49,7 +45,7 @@
         }
 
         .calendar-wrapper {
-            max-width: 1200px;
+            max-width: 1300px;
             width: 100%;
             background-color: var(--container-bg);
             backdrop-filter: blur(25px);
@@ -58,16 +54,30 @@
             border-radius: 24px;
             overflow: hidden;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+            position: relative;
         }
 
         .calendar-header {
-            height: 90px;
+            min-height: 100px;
             display: flex;
+            flex-direction: column; /* 모바일 기본 세로 배치 */
             align-items: center;
-            justify-content: space-between;
-            padding: 0 32px;
+            justify-content: center;
+            padding: 16px;
+            gap: 12px;
             border-bottom: 1px solid var(--border-color);
             background-color: var(--header-bg);
+        }
+
+        /* 데스크탑에서 헤더 가로 배치 */
+        @media (min-width: 768px) {
+            .calendar-header {
+                flex-direction: row;
+                height: 100px;
+                padding: 0 32px;
+                justify-content: space-between;
+            }
+            body { padding: 24px; }
         }
 
         .grid-container { 
@@ -80,79 +90,113 @@
 
         .weekday-cell {
             background-color: var(--weekday-bg);
-            padding: 15px 0;
+            padding: 10px 0;
             text-align: center;
             font-weight: 800;
-            font-size: 11px;
+            font-size: 9px; /* 모바일 폰트 축소 */
             letter-spacing: 1px;
+        }
+
+        @media (min-width: 768px) {
+            .weekday-cell { font-size: 11px; padding: 15px 0; }
         }
 
         .day-cell {
             background-color: transparent; 
-            min-height: 140px;
-            height: 16vh;
-            padding: 12px;
+            min-height: 80px; /* 모바일 높이 축소 */
+            height: auto;
+            padding: 8px;
             display: flex;
             flex-direction: column;
             justify-content: flex-start; 
-            gap: 6px;
+            gap: 4px;
             cursor: pointer;
-            transition: background-color 0.2s;
+            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.2s, box-shadow 0.2s;
+            overflow: hidden; 
+            z-index: 1;
+        }
+
+        @media (min-width: 768px) {
+            .day-cell { min-height: 140px; height: 16vh; padding: 12px; gap: 6px; }
         }
 
         .day-cell:hover:not(.other-month) { 
-            background-color: rgba(255, 255, 255, 0.1); 
-        }
-        
-        .today { 
-            box-shadow: inset 0 0 0 2px #3b82f6 !important;
-            background-color: rgba(59, 130, 246, 0.05) !important;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+            z-index: 10;
+            border-radius: 12px;
         }
 
+        .today { box-shadow: inset 0 0 0 2px #3b82f6 !important; background-color: rgba(59, 130, 246, 0.05) !important; }
         .num-red { color: #ff6b6b; }
         .num-blue { color: #4dabf7; }
         .other-month { opacity: 0.1; pointer-events: none; }
 
+        .easter-egg-cell {
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(255, 255, 255, 0.05)) !important;
+            border: 2px dashed rgba(251, 191, 36, 0.5) !important;
+        }
+
         .schedule-list {
             display: flex;
             flex-direction: column;
-            gap: 4px;
+            gap: 3px;
+            max-height: 100%; 
+            overflow: hidden;
         }
 
         .schedule-item {
-            font-size: 11px;
-            background-color: #3b82f6;
+            font-size: 9px; /* 모바일 일정 폰트 */
             color: white;
-            padding: 4px 8px;
-            border-radius: 4px;
+            padding: 2px 4px;
+            border-radius: 3px;
             line-height: 1.2;
             word-break: break-all;
+            white-space: nowrap; /* 모바일에서 겹침 방지 위해 한줄 처리 */
+            text-overflow: ellipsis;
+            overflow: hidden;
         }
 
-        .ctrl-btn {
-            width: 160px;
-            height: 38px;
+        @media (min-width: 768px) {
+            .schedule-item { font-size: 11px; padding: 4px 8px; border-radius: 4px; white-space: normal; }
+        }
+
+        .bg-default { background-color: #3b82f6; }
+        .bg-important { background-color: #ef4444; } 
+        .bg-work { background-color: #10b981; }      
+        .bg-personal { background-color: #f59e0b; }  
+
+        .ctrl-btn, .calendar-header button {
+            height: 32px;
+            padding: 0 10px;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
-            border-radius: 10px;
+            gap: 4px;
+            border-radius: 8px;
             border: 1px solid var(--border-color);
             background: var(--header-bg);
-            font-size: 12px;
+            font-size: 10px;
             font-weight: 700;
-            transition: all 0.2s;
+            transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
 
-        .ctrl-btn:hover { 
-            background: #3b82f6; 
-            color: white; 
-            border-color: #3b82f6; 
+        @media (min-width: 768px) {
+            .ctrl-btn, .calendar-header button { height: 38px; padding: 0 15px; font-size: 12px; border-radius: 10px; }
         }
 
-        .reset-btn {
-            width: 80px;
-            color: #ef4444;
+        .ctrl-btn:hover, .calendar-header button:hover {
+            transform: translateY(-4px);
+            background: #3b82f6;
+            color: white;
+            border-color: #3b82f6;
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        #liveClock { font-variant-numeric: tabular-nums; letter-spacing: -1px; }
+
+        .easter-egg-cell:hover {
+            box-shadow: 0 0 20px rgba(251, 191, 36, 0.4);
+            border-style: dotted !important;
         }
     </style>
 </head>
@@ -160,19 +204,24 @@
 
     <div class="calendar-wrapper">   
         <div class="calendar-header">
-            <div class="flex items-center gap-6">
-                <button onclick="changeMonth(-1)" class="w-10 h-10 border rounded-xl hover:bg-blue-500 hover:text-white transition">◀</button>
-                <h2 id="monthDisplay" class="text-2xl font-black min-w-[200px] text-center tracking-tight cursor-pointer"></h2>
-                <button onclick="changeMonth(1)" class="w-10 h-10 border rounded-xl hover:bg-blue-500 hover:text-white transition">▶</button>
+            <div class="flex items-center gap-2 md:gap-4 w-full justify-between md:w-auto">
+                <div class="flex items-center gap-1 md:gap-2">
+                    <button onclick="changeMonth(-1)" class="w-7 h-7 md:w-8 md:h-8">◀</button>
+                    <button onclick="goToday()" class="px-2 md:px-4 h-7 md:h-8 text-[9px] md:text-[11px] font-extrabold tracking-tighter">TODAY</button>
+                    <button onclick="changeMonth(1)" class="w-7 h-7 md:w-8 md:h-8">▶</button>
+                </div>
+                <h2 id="monthDisplay" class="text-lg md:text-2xl font-black tracking-tight cursor-pointer"></h2>
             </div>
 
-            <div class="flex items-center gap-2">
-                <button onclick="toggleDarkMode()" class="ctrl-btn">
-                    <span id="darkIcon">🌙</span> 
-                    <span id="darkText">다크모드 ON</span>
-                </button>
-                <button onclick="document.getElementById('themeUpload').click()" class="ctrl-btn"> 배경 업로드</button>
-                <button onclick="resetTheme()" class="ctrl-btn reset-btn">초기화</button>
+            <div class="text-center md:block" style="md:transform: translateX(-50px);">
+                <div id="liveClock" class="text-xl md:text-2xl font-black opacity-80 leading-none">00:00:00</div>
+                <div id="liveDate" class="text-[8px] md:text-[10px] font-bold opacity-50 uppercase tracking-widest mt-1">DATE LOADING...</div>
+            </div>
+
+            <div class="flex items-center gap-1 md:gap-2 w-full justify-center md:w-auto">
+                <button onclick="toggleDarkMode()" class="ctrl-btn" title="다크모드 전환"><span id="darkIcon">🌙</span></button>
+                <button onclick="document.getElementById('themeUpload').click()" class="ctrl-btn">배경 변경</button>
+                <button onclick="resetTheme()" class="ctrl-btn text-red-500 font-bold">초기화</button>
                 <input type="file" id="themeUpload" accept="image/*" class="hidden" onchange="handleImageUpload(this)">
             </div>
         </div>
@@ -191,22 +240,49 @@
 
     <script>
         const HOLIDAY_API_KEY = '61f7d829f860ed4f53b7f27f6c1d929973fc1c700ad9e6bdd7b64875c8cae82b'; 
-        
-        // 기본 배경화면 url
         const DEFAULT_IMAGE_URL = 'http://i.ibb.co/wFfscGj8/nikolai-artamonov-zk-QLx-Tin-Xk-unsplash.jpg';
 
         let currYear = new Date().getFullYear();
         let currMonth = new Date().getMonth();
         const holidayCache = {};
 
-        async function init() {
+        function init() {
             if (localStorage.getItem('dark-mode') === 'enabled') {
                 document.body.classList.add('dark-mode');
                 updateDarkUI(true);
             }
-            loadTheme(); // 저장된 사진 또는 기본 사진 불러오기
+            loadTheme(); 
             renderCalendar(); 
-            await updateHolidays(); 
+            updateHolidays();
+            startClock();
+        }
+
+        function startClock() {
+            const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+            
+            setInterval(() => {
+                const now = new Date();
+                const clockElem = document.getElementById('liveClock');
+                const dateElem = document.getElementById('liveDate');
+                if(clockElem) clockElem.innerText = now.toLocaleTimeString('en-US', { hour12: false });
+                if(dateElem) dateElem.innerText = `${days[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()}`;
+            }, 1000);
+        }
+
+        function getCategoryClass(text) {
+            if (text.startsWith('!')) return 'bg-important';
+            if (text.startsWith('@')) return 'bg-work';
+            if (text.startsWith('#')) return 'bg-personal';
+            return 'bg-default';
+        }
+
+        function goToday() {
+            const today = new Date();
+            currYear = today.getFullYear();
+            currMonth = today.getMonth();
+            renderCalendar();
+            updateHolidays();
         }
 
         function handleImageUpload(input) {
@@ -222,52 +298,27 @@
             }
         }
 
-        function applyTheme(imgUrl) { 
-            document.body.style.backgroundImage = `url('${imgUrl}')`; 
-        }
-
+        function applyTheme(imgUrl) { document.body.style.backgroundImage = `url('${imgUrl}')`; }
         function loadTheme() { 
             const saved = localStorage.getItem('user-bg-v6'); 
-            // 저장된 게 있으면 쓰고, 없으면 기본 사진 사용
-            if (saved) {
-                applyTheme(saved);
-            } else {
-                applyTheme(DEFAULT_IMAGE_URL);
-            }
+            applyTheme(saved || DEFAULT_IMAGE_URL);
         }
-
-        function resetTheme() { 
-            localStorage.removeItem('user-bg-v6'); 
-            applyTheme(DEFAULT_IMAGE_URL); // 초기화 시 다시 기본 사진으로
-        }
-
+        function resetTheme() { localStorage.removeItem('user-bg-v6'); applyTheme(DEFAULT_IMAGE_URL); }
+        
         function toggleDarkMode() {
             const isDark = document.body.classList.toggle('dark-mode');
             localStorage.setItem('dark-mode', isDark ? 'enabled' : 'disabled');
             updateDarkUI(isDark);
             renderCalendar();
         }
-
         function updateDarkUI(isDark) {
-            document.getElementById('darkIcon').innerText = isDark ? '☀️' : '🌙';
-            document.getElementById('darkText').innerText = isDark ? '라이트모드 ON' : '다크모드 ON';
-        }
-
-        function changeYearPrompt() {
-            const newYear = prompt("이동할 년도를 입력하세요:", currYear);
-            if (newYear && !isNaN(newYear)) {
-                currYear = parseInt(newYear);
-                renderCalendar();
-                updateHolidays();
-            }
+            const icon = document.getElementById('darkIcon');
+            if(icon) icon.innerText = isDark ? '☀️' : '🌙';
         }
 
         async function updateHolidays() {
             const cacheKey = `${currYear}-${currMonth}`;
-            if (holidayCache[cacheKey]) { 
-                renderCalendar(); 
-                return; 
-            }
+            if (holidayCache[cacheKey]) { renderCalendar(); return; }
             const url = `https://apis.data.go.kr/B090041/openapi/service/SpcdeInfoService/getHoliDeInfo?solYear=${currYear}&solMonth=${String(currMonth + 1).padStart(2, '0')}&ServiceKey=${HOLIDAY_API_KEY}&_type=json`;
             try {
                 const res = await fetch(url);
@@ -282,13 +333,16 @@
                 }
                 holidayCache[cacheKey] = holidays;
                 renderCalendar();
-            } catch (e) { 
-                console.warn("공휴일 데이터를 불러오지 못했습니다."); 
-            }
+            } catch (e) { console.warn("공휴일 로드에 실패하였습니다"); }
+        }
+
+        function triggerEasterEgg() {
+            alert("🎊 2011년 12월 17일 이스터에그 발견! 🎊\n개발자의 생일입니다!");
         }
 
         function renderCalendar() {
             const display = document.getElementById('monthDisplay');
+            if(!display) return;
             display.innerHTML = `<span onclick="changeYearPrompt()" class="hover:underline hover:text-blue-500 transition-all">${currYear}년</span> ${currMonth + 1}월`;
             
             const firstDay = new Date(currYear, currMonth, 1).getDay();
@@ -298,60 +352,64 @@
             const today = new Date();
 
             let html = "";
-            for (let i = firstDay; i > 0; i--) {
-                html += `<div class="day-cell other-month">${prevLastDate - i + 1}</div>`;
-            }
+            for (let i = firstDay; i > 0; i--) html += `<div class="day-cell other-month">${prevLastDate - i + 1}</div>`;
+            
             for (let i = 1; i <= lastDate; i++) {
                 const dateKey = `${currYear}-${currMonth + 1}-${i}`;
                 const isToday = (currYear === today.getFullYear() && currMonth === today.getMonth() && i === today.getDate()) ? 'today' : '';
                 const dayOfWeek = new Date(currYear, currMonth, i).getDay();
                 
+                const isEasterEggDay = (currYear === 2011 && currMonth === 11 && i === 17);
+                const eggClass = isEasterEggDay ? 'easter-egg-cell' : '';
+                const clickFn = isEasterEggDay ? `triggerEasterEgg()` : `addSchedule('${dateKey}')`;
+
                 let colorClass = "";
                 if (holidays[dateKey] || dayOfWeek === 0) colorClass = "num-red";
                 else if (dayOfWeek === 6) colorClass = "num-blue";
 
                 const savedSchedule = localStorage.getItem(`sched-${dateKey}`);
+                const categoryClass = savedSchedule ? getCategoryClass(savedSchedule) : 'bg-default';
 
                 html += `
-                    <div onclick="addSchedule('${dateKey}')" class="day-cell ${isToday}">
+                    <div onclick="${clickFn}" class="day-cell ${isToday} ${eggClass}" style="${!savedSchedule ? 'cursor: default;' : ''}">
                         <div class="flex justify-between items-start">
-                            <span class="text-xl font-black ${colorClass}">${i}</span>
-                            <div class="flex flex-col items-end gap-1">
-                                ${holidays[dateKey] ? `<span class="text-[10px] font-bold text-red-500">${holidays[dateKey]}</span>` : ''}
-                            </div>
+                            <span class="text-sm md:text-xl font-black ${colorClass}">${i}</span>
+                            ${isEasterEggDay ? `<span class="animate-bounce text-[10px] md:text-base">✨</span>` : (holidays[dateKey] ? `<span class="text-[7px] md:text-[9px] font-bold text-red-500">${holidays[dateKey]}</span>` : '')}
                         </div>
                         <div class="schedule-list">
-                            ${savedSchedule ? `<div class="schedule-item truncate">${savedSchedule}</div>` : ''}
+                            ${isEasterEggDay ? `<div class="text-[8px] md:text-[10px] text-amber-500 font-bold">BDAY</div>` : ''}
+                            ${savedSchedule ? `<div class="schedule-item ${categoryClass}">${savedSchedule}</div>` : ''}
                         </div>
                     </div>
                 `;
             }
-            document.getElementById('calendarGrid').innerHTML = html;
+            const grid = document.getElementById('calendarGrid');
+            if(grid) grid.innerHTML = html;
         }
 
         function changeMonth(diff) {
             currMonth += diff;
-            if (currMonth < 0) { 
-                currYear--; 
-                currMonth = 11; 
-            } else if (currMonth > 11) { 
-                currYear++; 
-                currMonth = 0; 
-            }
+            if (currMonth < 0) { currYear--; currMonth = 11; }
+            else if (currMonth > 11) { currYear++; currMonth = 0; }
             renderCalendar(); 
             updateHolidays();
         }
 
+        function changeYearPrompt() {
+            const newYear = prompt("이동할 년도를 입력하세요:", currYear);
+            if (newYear && !isNaN(newYear)) {
+                currYear = parseInt(newYear);
+                renderCalendar();
+                updateHolidays();
+            }
+        }
+
         function addSchedule(key) {
             const oldVal = localStorage.getItem(`sched-${key}`) || "";
-            const val = prompt("일정을 입력하세요 (공백만 입력 시 삭제):", oldVal);
-            
+            const val = prompt("일정을 입력하세요:\n(!중요, @업무, #개인)", oldVal);
             if (val !== null) {
-                if (val.trim() === "") {
-                    localStorage.removeItem(`sched-${key}`);
-                } else {
-                    localStorage.setItem(`sched-${key}`, val.trim());
-                }
+                if (val.trim() === "") localStorage.removeItem(`sched-${key}`);
+                else localStorage.setItem(`sched-${key}`, val.trim());
                 renderCalendar();
             }
         }
